@@ -1,7 +1,8 @@
 """data/exams.json と sw.js（オフライン用のキャッシュ一覧）を作り直す。データや画面を変えたら実行する。"""
 import hashlib, json, os
 APP = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-exams = sorted([f[:-5] for f in os.listdir(f'{APP}/data') if f.endswith('.json') and f != 'exams.json'], key=lambda e: (e[:4], e[-1] == 'a'), reverse=True)
+import sys
+exams = sys.argv[1:] or sorted([f[:-5] for f in os.listdir(f'{APP}/data') if f.endswith('.json') and f != 'exams.json'], key=lambda e: (e[:4], e[-1] == 'a'), reverse=True)
 json.dump(exams, open(f'{APP}/data/exams.json', 'w', encoding='utf-8'))
 files = ['./', 'index.html', 'manifest.webmanifest?v=1', 'icons/icon-180.png?v=1', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg?v=1', 'data/exams.json']
 files += [f'data/{e}.json' for e in exams]

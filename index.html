@@ -67,7 +67,10 @@ body.inquiz #quiz{display:block}
 body.inquiz #app, body.inquiz nav.tabs, body.inquiz header.top{display:none}
 .qbar{position:sticky;top:0;z-index:5;background:rgba(243,245,249,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
   padding:calc(6px + var(--safe-t)) 8px 6px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line)}
-.qbar .x,.qbar .st{width:44px;height:44px;display:grid;place-items:center;font-size:24px;border-radius:10px;flex:none}
+.qbar .st{width:44px;height:44px;display:grid;place-items:center;font-size:24px;border-radius:10px;flex:none}
+.qbar .x{width:44px;height:44px;display:grid;place-items:center;font-size:24px;border-radius:10px;flex:none}
+.qbar .quit{height:40px;padding:0 12px;border-radius:10px;background:#e7ebf2;font-size:15px;font-weight:700;flex:none;white-space:nowrap}
+.quitlow{margin-top:22px}
 .qbar .st{font-size:26px;color:#b9c1cc}
 .qbar .st.on{color:var(--star)}
 .qbar .mid{flex:1;min-width:0}
@@ -336,7 +339,7 @@ function renderQuiz(){
   const answered = c.res.length > c.i;
   const picked = answered ? c.res[c.i].p : null;
   const big = bigOf(q.g);
-  let h = `<div class="qbar"><button class="x" data-act="quit" aria-label="閉じる">✕</button>
+  let h = `<div class="qbar"><button class="quit" data-act="quit">${c.mode === 'single' ? '✕ 閉じる' : '⏸ 中断'}</button>
     <div class="mid"><div class="row" style="gap:6px"><b style="font-variant-numeric:tabular-nums">${c.i+1} / ${c.ids.length}</b><span class="chip ${big.k}">${GENRES[q.g]}</span></div>
     <div class="prog"><i style="width:${pct(c.i + (answered?1:0), c.ids.length)}%"></i></div></div>
     <button class="st ${S.marks[q.id]?'on':''}" data-act="star" aria-label="見直しに追加">${S.marks[q.id]?'★':'☆'}</button></div>`;
@@ -355,6 +358,7 @@ function renderQuiz(){
       <div class="expl" id="expl">${jp(q.x)}<span class="src">※解説はこのアプリ独自のもの。詳しくは過去問道場へ</span></div>
       <button class="btn pri" data-act="next">${c.i+1 < c.ids.length ? '次の問題へ' : '結果を見る'}</button></div>`;
   }
+  if(c.mode !== 'single') h += `<button class="btn line quitlow" data-act="quit">⏸ 中断して、あとで続きから</button>`;
   h += `</div>`;
   $('#quiz').innerHTML = h;
 }
@@ -458,7 +462,7 @@ function renderSettings(){
     問題：応用情報技術者試験 午前問題（出典：独立行政法人情報処理推進機構（IPA）公開の過去問題）。問題文は公開 PDF から書き起こしたもので、図表は PDF から切り出しています。<br>
     解説：このアプリ独自に作成したものです。誤りが含まれる可能性があるため、気になる場合は「過去問道場で見る」から確認してください（過去問道場は外部サイトです）。<br>
     データの保存：記録はこの端末のブラウザ内にのみ保存され、外部には送信されません。</div>
-    <p class="muted" style="text-align:center">ap-kakomon v0.1.0</p>`;
+    <p class="muted" style="text-align:center">ap-kakomon v0.2.0</p>`;
 }
 async function shareOrDownload(blob, filename){
   const file = new File([blob], filename, {type: blob.type});
@@ -529,11 +533,11 @@ $('#quiz').addEventListener('click', e => {
     if(x.classList.contains('open')) x.scrollIntoView({behavior:'smooth', block:'nearest'}); }
   else if(a === 'next'){ c.i++; save(); renderQuiz(); scrollTo(0,0); }
   else if(a === 'quit'){
-    if(c.res.length < c.ids.length && c.res.length > 0 && c.mode !== 'single'){
-      if(!confirm('中断しますか？\n（出題画面の「続きから解く」で再開できます）')) return;
-    }
-    if(c.mode === 'single' || c.res.length === c.ids.length){ recordHistory(); S.cur = null; }
+    // 中断しても途中経過は保存済み。出題画面の「続きから解く」で再開できる
+    const done = c.mode === 'single' || c.res.length === c.ids.length;
+    if(done){ recordHistory(); S.cur = null; }
     save(); exitQuiz();
+    if(!done && c.res.length) toast('中断しました。「続きから解く」で再開できます');
   }
   else if(a === 'retry'){ const ids = c.res.filter(r => !r.ok).map(r => r.id); startQuiz(shuffle(ids), 'retry'); scrollTo(0,0); }
   else if(a === 'close'){ S.cur = null; save(); exitQuiz(); }
