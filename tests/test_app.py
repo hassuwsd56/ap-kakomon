@@ -246,6 +246,16 @@ with Browser() as b:
             ck.check("α_A のような下付き文字が小さく表示される", b.js("document.querySelectorAll('#qtext sub').length > 0 && !document.getElementById('qtext').innerText.includes('_A')"))
             b.tap_el("[data-act=quit]")
 
+    with ck.step("問題文中の図"):
+        inl = next((q for q in ALL if "{図" in q["q"]), None)
+        if inl:
+            b.js(f"startQuiz(['{inl['id']}'], 'single')"); b.pump(0.5)
+            ck.check("{図} の位置に図が入り、{図} の文字は出ない",
+                     b.js("!document.getElementById('quiz').innerText.includes('{図') && !!document.querySelector('.qtext + .figs + .qtext')"))
+            ck.check("問題文中の図も読み込める", b.js("[...document.querySelectorAll('.fig img')].every(i => i.complete && i.naturalWidth > 0)"))
+            b.screenshot(os.path.join(OUT, "08_inline_fig.png"))
+            b.tap_el("[data-act=quit]")
+
     with ck.step("オフライン"):
         b.pump(1.5)
         ready = b.js("navigator.serviceWorker && navigator.serviceWorker.controller ? 1 : 0")

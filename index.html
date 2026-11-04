@@ -343,8 +343,13 @@ function renderQuiz(){
     <div class="mid"><div class="row" style="gap:6px"><b style="font-variant-numeric:tabular-nums">${c.i+1} / ${c.ids.length}</b><span class="chip ${big.k}">${GENRES[q.g]}</span></div>
     <div class="prog"><i style="width:${pct(c.i + (answered?1:0), c.ids.length)}%"></i></div></div>
     <button class="st ${S.marks[q.id]?'on':''}" data-act="star" aria-label="見直しに追加">${S.marks[q.id]?'★':'☆'}</button></div>`;
-  h += `<div class="qwrap"><div class="qmeta">${esc(examLabel(q))}</div><div class="qtext" id="qtext">${jp(q.q)}</div>`;
-  if(q.f.length) h += `<div class="figs">` + q.f.map((f,i) => `<button class="fig" data-fig="${i}"><img src="${f.src}" width="${f.w}" height="${f.h}" alt="図"><div class="zoom">タップで拡大</div></button>`).join('') + `</div>`;
+  const figHtml = i => { const f = q.f[i]; return f ? `<button class="fig" data-fig="${i}"><img src="${f.src}" width="${f.w}" height="${f.h}" alt="図"><div class="zoom">タップで拡大</div></button>` : ''; };
+  // 問題文中の {図} / {図2} の位置に図を差し込む。残りの図は問題文の後にまとめて表示
+  const used = new Set();
+  const body = jp(q.q).replace(/\n?\{図(\d*)\}\n?/g, (m, n) => { const i = n ? +n - 1 : 0; used.add(i); return `</div><div class="figs">${figHtml(i)}</div><div class="qtext">`; });
+  h += `<div class="qwrap"><div class="qmeta">${esc(examLabel(q))}</div><div class="qtext" id="qtext">${body}</div>`;
+  const rest = q.f.map((f,i) => i).filter(i => !used.has(i));
+  if(rest.length) h += `<div class="figs">` + rest.map(figHtml).join('') + `</div>`;
   h += `<div class="choices ${answered?'answered':''}" id="choices">` + q.c.map((t,i) => {
     let cls = '';
     if(answered){ if(i === q.ans) cls = 'ok'; else if(i === picked) cls = 'ng'; }
